@@ -5,6 +5,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import com.techstar.greendao.entity.Temp;
 import com.techstar.greendao.gen.TempDao;
@@ -12,13 +13,16 @@ import com.techstar.greendao.gen.TempDao;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Random;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
 
-    private Button mAdd,mDelete,mUpdate,mFind;
-    private EditText mContext;
+    private Button mAdd,mDelete,mUpdate,mFindOne,mFindAll;
+    private TextView mContext;
     private TempDao mTempDao;
-    private EditText mText_edt;
+    private EditText mDelete_etd;
+    private EditText mFindOne_etd;
+    private Button mDeleteAll_btn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,16 +37,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mAdd.setOnClickListener(this);
         mDelete.setOnClickListener(this);
         mUpdate.setOnClickListener(this);
-        mFind.setOnClickListener(this);
+        mFindOne.setOnClickListener(this);
+        mFindAll.setOnClickListener(this);
+        mDeleteAll_btn.setOnClickListener(this);
     }
 
     private void initView() {
-        mContext = (EditText) findViewById(R.id.textView);
-        mText_edt = (EditText) findViewById(R.id.etd_text);
+        mContext = (TextView) findViewById(R.id.textView);
+        mDelete_etd = (EditText) findViewById(R.id.etd_delete);
+        mFindOne_etd = (EditText) findViewById(R.id.edt_findOne);
+
+
         mAdd = (Button) findViewById(R.id.btn_add);
         mDelete = (Button) findViewById(R.id.btn_delete);
         mUpdate = (Button) findViewById(R.id.btn_update);
-        mFind = (Button) findViewById(R.id.btn_find);
+        mFindOne = (Button) findViewById(R.id.btn_findOne);
+        mFindAll = (Button) findViewById(R.id.btn_findAll);
+        mDeleteAll_btn = (Button) findViewById(R.id.btn_deleteAll);
     }
 
     @Override
@@ -57,11 +68,47 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.btn_update:
                 updateDate();
                 break;
-            case R.id.btn_find:
-                findDate();
+            case R.id.btn_findOne:
+                findOneData();
+                break;
+            case R.id.btn_findAll:
+                findAllData();
+                break;
+            case R.id.btn_deleteAll:
+                deleteAllDate();
                 break;
         }
     }
+
+    /**
+     * 删除全部数据
+     */
+    private void deleteAllDate() {
+        mTempDao.deleteAll();
+    }
+
+    /**
+     * 查询全部
+     */
+    private void findAllData() {
+        StringBuffer stringBuffer = new StringBuffer();
+        List<Temp> temps = mTempDao.loadAll();
+        for (int i = 0; i < temps.size(); i++) {
+            stringBuffer.append("id:"+ temps.get(i).getId()+"data:"+temps.get(i).getData()+"wendu:"+temps.get(i).getValue()+"|");
+        }
+        mContext.setText("查询全部数据:"+stringBuffer);
+    }
+
+    /**
+     * 根据ID进行查询
+     */
+    private void findOneData() {
+        String s = mFindOne_etd.getText().toString();
+        long id = Long.parseLong(s);
+        Temp temp = findOneDataById(id);
+        mContext.setText("id:"+temp.getId()+"data:"+temp.getData()+"wendu:"+temp.getValue());
+    }
+
 
     /**
      * 增加数据
@@ -69,16 +116,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void addDate() {
         //id这里传值为Null是因为id自动增涨
         SimpleDateFormat myFmt2=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        Temp temp = new Temp(null,myFmt2.format(new Date()),10);
+        Random random = new Random();
+        Temp temp = new Temp(null,myFmt2.format(new Date()),random.nextInt(50));
         mTempDao.insert(temp);
-        mContext.setText(""+temp.getData());
+        mContext.setText("id:"+temp.getId()+"data:"+temp.getData()+"wendu:"+temp.getValue());
     }
 
     /**
      * 删除数据
      */
     private void deleteDate() {
-        deleteTempById(2);
+        String id = mDelete_etd.getText().toString();
+        Long Id = Long.parseLong(id);
+        deleteTempById(Id);
     }
 
     /**
@@ -94,33 +144,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      * 更改数据
      */
     private void updateDate() {
-
-        String str = mContext.getText().toString();
-        long id = Long.parseLong(str);
-
-        String s = mText_edt.getText().toString();
-        int value = Integer.parseInt(s);
-
-        Temp mTemp = findDataById(id);
+        int value = 10;
+        Temp mTemp = findOneDataById(1);
         mTemp.setValue(value);
         mTempDao.update(mTemp);
 
     }
 
-    /**
-     * 查找数据
-     */
-    private void findDate() {
-
-        StringBuffer stringBuffer = new StringBuffer();
-        List<Temp> temps = mTempDao.loadAll();
-        for (int i = 0; i < temps.size(); i++) {
-            stringBuffer.append(temps.get(i).getData()+":"+temps.get(i).getValue()+"---");
-        }
-        mContext.setText("查询全部数据==>"+stringBuffer);
-    }
-
-    private Temp findDataById(long id){
+    private Temp findOneDataById(long id){
         return mTempDao.loadByRowId(id);
     }
 }
